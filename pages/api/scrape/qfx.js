@@ -67,102 +67,110 @@ export default async function handler(req, res) {
       }
 
 
-      const today = new Date().toISOString().split("T")[0];
-      const detailUrl = `https://web-api.qfxcinemas.com/api/cinema/admin/movie-confirmed-list/${movie.movie_id}?fromDate=${today}&city_id=29790`;
+      const targetDates = [];
+      for (let i = 0; i < 4; i++) {
+        const d = new Date();
+        d.setDate(d.getDate() + i);
+        targetDates.push(d.toISOString().split("T")[0]);
+      }
 
-      const detailRes = await fetch(detailUrl, { headers: HEADERS });
-      const detailData = await detailRes.json();
-      const showtimeRecords = detailData.Records?.data || [];
+      for (const targetDate of targetDates) {
+        const detailUrl = `https://web-api.qfxcinemas.com/api/cinema/admin/movie-confirmed-list/${movie.movie_id}?fromDate=${targetDate}&city_id=29790`;
 
-      for (const show of showtimeRecords) {
-        const apiCineName = show.cine_name.trim();
+        const detailRes = await fetch(detailUrl, { headers: HEADERS });
+        const detailData = await detailRes.json();
+        const showtimeRecords = detailData.Records?.data || [];
 
-
-        const cleanApiName = apiCineName
-          .replace(/QFX/gi, "")
-          .trim()
-          .toLowerCase();
-
-
-        let cinemaMatch = allCinemas.find((dbCine) => {
-          const nameToCompare = dbCine.mall_name;
-          if (!nameToCompare) return false;
-
-          const dbNameClean = nameToCompare.toLowerCase().trim();
-          const isMatch = cleanApiName.includes(dbNameClean) || dbNameClean.includes(cleanApiName);
+        for (const show of showtimeRecords) {
+          const apiCineName = show.cine_name.trim();
 
 
-          return isMatch;
-        });
+          const cleanApiName = apiCineName
+            .replace(/QFX/gi, "")
+            .trim()
+            .toLowerCase();
 
-        if (!cinemaMatch) {
-          console.log(`✨ Creating missing cinema in DB: "${show.cine_name}"`);
-          const { data: newCinema, error: createErr } = await supabase
-            .from("cinemas")
-            .insert({
-              mall_name: show.cine_name,
-              chain_name: "QFX"
-            })
-            .select()
-            .single();
 
-          if (createErr || !newCinema) {
-            console.error(`❌ Failed to auto-create cinema "${apiCineName}":`, createErr?.message);
-          } else {
-            console.log(`✅ Successfully created cinema: "${newCinema.mall_name}"`);
-            cinemaMatch = newCinema;
-            allCinemas.push(newCinema);
-          }
-        }
+          let cinemaMatch = allCinemas.find((dbCine) => {
+            const nameToCompare = dbCine.mall_name;
+            if (!nameToCompare) return false;
 
-        if (cinemaMatch) {
+            const dbNameClean = nameToCompare.toLowerCase().trim();
+            const isMatch = cleanApiName.includes(dbNameClean) || dbNameClean.includes(cleanApiName);
 
-          let extractedPrices = null;
-          try {
-            const priceReqPayload = {
-              screen_id: show.screen_id,
-              ss_id: show.ss_id,
-              md_id: show.movie_details_id,
-              type_seat_show: 1
-            };
 
-            const priceRes = await fetch("https://web-api.qfxcinemas.com/api/external/seat-layout", {
-              method: "POST",
-              headers: HEADERS,
-              body: JSON.stringify(priceReqPayload)
-            });
+            return isMatch;
+          });
 
-            if (priceRes.ok) {
-              const priceData = await priceRes.json();
-              if (priceData.status && priceData.Records) {
-                const firstValidSeat = priceData.Records.find((seat) => seat.seat_price);
+          if (!cinemaMatch) {
+            console.log(`✨ Creating missing cinema in DB: "${show.cine_name}"`);
+            const { data: newCinema, error: createErr } = await supabase
+              .from("cinemas")
+              .insert({
+                mall_name: show.cine_name,
+                chain_name: "QFX"
+              })
+              .select()
+              .single();
 
-                if (firstValidSeat) {
-                  extractedPrices = firstValidSeat.seat_price;
-                }
-              }
+            if (createErr || !newCinema) {
+              console.error(`❌ Failed to auto-create cinema "${apiCineName}":`, createErr?.message);
             } else {
-               console.log("❌ Seat Layout Request Failed:", priceRes.status, await priceRes.text());
+              console.log(`✅ Successfully created cinema: "${newCinema.mall_name}"`);
+              cinemaMatch = newCinema;
+              allCinemas.push(newCinema);
             }
-          } catch (e) {
-            console.error("Failed to fetch price/seat layout:", e.message);
           }
 
-          const startTime = `${show.ss_start_date}T${show.ss_start_show_time}:00`;
+          if (cinemaMatch) {
 
-          const { error: sError } = await supabase.from("showtimes").upsert(
-            {
-              movie_id: movieRecord.id,
-              cinema_id: cinemaMatch.id,
-              start_time: startTime,
-              price: extractedPrices || null,
-              booking_url: `https://www.qfxcinemas.com/quick-ticket?showid=${show.schedule_id}`,
-            },
-            { onConflict: "movie_id, cinema_id, start_time" },
-          );
+            let extractedPrices = null;
+            try {
+              const priceReqPayload = {
+                screen_id: show.screen_id,
+                ss_id: show.ss_id,
+                md_id: show.movie_details_id,
+                type_seat_show: 1
+              };
 
-          if (sError) {
-            console.error(`❌ DB Error for ${cleanTitle}:`, sError.message);
+              const priceRes = await fetch("https://web-api.qfxcinemas.com/api/external/seat-layout", {
+                method: "POST",
+                headers: HEADERS,
+                body: JSON.stringify(priceReqPayload)
+              });
+
+              if (priceRes.ok) {
+                const priceData = await priceRes.json();
+                if (priceData.status && priceData.Records) {
+                  const firstValidSeat = priceData.Records.find((seat) => seat.seat_price);
+
+                  if (firstValidSeat) {
+                    extractedPrices = firstValidSeat.seat_price;
+                  }
+                }
+              } else {
+                 console.log("❌ Seat Layout Request Failed:", priceRes.status, await priceRes.text());
+              }
+            } catch (e) {
+              console.error("Failed to fetch price/seat layout:", e.message);
+            }
+
+            const startTime = `${show.ss_start_date}T${show.ss_start_show_time}:00`;
+
+            const { error: sError } = await supabase.from("showtimes").upsert(
+              {
+                movie_id: movieRecord.id,
+                cinema_id: cinemaMatch.id,
+                start_time: startTime,
+                price: extractedPrices || null,
+                booking_url: `https://www.qfxcinemas.com/now-showing-booking/${movie.movie_id}/1`,
+              },
+              { onConflict: "movie_id, cinema_id, start_time" },
+            );
+
+            if (sError) {
+              console.error(`❌ DB Error for ${cleanTitle}:`, sError.message);
+            }
           }
         }
       }
