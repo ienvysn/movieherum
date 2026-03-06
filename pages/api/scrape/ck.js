@@ -145,12 +145,24 @@ export default async function handler(req, res) {
                 const time24 = convertTime12to24(show.StartTime);
                 const startTimeIso = `${movie.ShowDate}T${time24}`;
 
+                // Ticket pricing (Gold tier)
+                const hourInt = parseInt(time24.split(":")[0], 10);
+                const showDateObj = new Date(movie.ShowDate);
+                const dayOfWeek = showDateObj.getDay(); // 0=Sun,...6=Sat
+                const isMorning = hourInt < 10;
+
+                //              Sun  Mon  Tue  Wed  Thu  Fri  Sat
+                const goldMorn = [200, 150, 150, 200, 200, 200, 200];
+                const goldAftn = [400, 300, 300, 200, 200, 400, 400];
+
+                const ticketPrice = isMorning ? goldMorn[dayOfWeek] : goldAftn[dayOfWeek];
+
                 const { error: sError } = await supabase.from("showtimes").upsert(
                   {
                     movie_id: movieRecord.id,
                     cinema_id: cinemaMatch.id,
                     start_time: startTimeIso,
-                    price: null,
+                    price: ticketPrice,
                     booking_url: `https://www.ckcinemas.com/showdetail/${show.ShowID}`,
                   },
                   { onConflict: "movie_id, cinema_id, start_time" }
