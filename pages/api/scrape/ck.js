@@ -88,6 +88,7 @@ export default async function handler(req, res) {
               poster_url: movie.PostImage
                 ? `https://www.ckcinemas.com/images/movie/${movie.PostImage}`
                 : null,
+              genre: movie.Genre || null,
             },
             { onConflict: "title" }
           )

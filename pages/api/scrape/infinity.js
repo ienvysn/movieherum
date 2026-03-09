@@ -106,6 +106,7 @@ export default async function handler(req, res) {
               poster_url: movie.PostImage
                 ? `https://infinitymovies.com.np/images/movie/${movie.PostImage}`
                 : null,
+              genre: movie.MovieGenre || null,
             },
             { onConflict: "title" }
           )

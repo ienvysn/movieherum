@@ -1,0 +1,64 @@
+name: Daily Cinema Scraper
+
+on:
+  schedule:
+
+    - cron: '15 19 * * *'
+  workflow_dispatch:
+
+jobs:
+  scrape-and-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.11.0'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Install Wait-On
+        run: npm install -g wait-on
+
+      - name: Start Next.js Server Locally in the Background
+        env:
+
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+        run: |
+          npm run build
+          npm run start &
+          wait-on http://localhost:3000
+
+      - name: Run All Scrapers
+        run: |
+          # This runs sequentially. Since it's on GitHub Actions, it has up to 6 hours to finish!
+          echo "Cleaning up expired showtimes..."
+          curl -s http://localhost:3000/api/scrape/cleanup
+
+          echo "Starting QFX Scraper..."
+          curl -s http://localhost:3000/api/scrape/qfx
+
+          echo "Starting BigMovies Scraper..."
+          curl -s http://localhost:3000/api/scrape/bigmovies
+
+          echo "Starting Ranjana Scraper..."
+          curl -s http://localhost:3000/api/scrape/ranjana
+
+          echo "Starting Infinity Scraper..."
+          curl -s http://localhost:3000/api/scrape/infinity
+
+          echo "Starting CK Scraper..."
+          curl -s http://localhost:3000/api/scrape/ck
+
+          echo "Starting One Scraper..."
+          curl -s http://localhost:3000/api/scrape/one
+
+          echo "Starting Ini Scraper..."
+          curl -s http://localhost:3000/api/scrape/ini
+
+          echo "All scraping tasks have completed successfully!"

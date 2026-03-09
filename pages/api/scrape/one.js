@@ -62,6 +62,7 @@ export default async function handler(req, res) {
             {
               title: cleanTitle,
               poster_url: movie.PostImage || null,
+              genre: movie.MovieGenre || null,
             },
             { onConflict: "title" },
           )

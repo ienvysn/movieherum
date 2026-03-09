@@ -55,6 +55,7 @@ export default async function handler(req, res) {
           {
             title: cleanTitle,
             poster_url: movie.MovieContent[0]?.artwork || null,
+            genre: null, // QFX quick-book API doesn't cleanly provide genre in this first fetch
           },
           { onConflict: "title" },
         )
