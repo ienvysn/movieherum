@@ -29,10 +29,11 @@ jobs:
 
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
         run: |
           npm run build
           npm run start &
-          wait-on http://localhost:3000
+          npx wait-on http-get://localhost:3000
 
       - name: Run All Scrapers
         run: |
