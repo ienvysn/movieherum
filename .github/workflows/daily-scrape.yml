@@ -30,6 +30,7 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
           npm run build
           npm run start &
@@ -39,30 +40,30 @@ jobs:
         run: |
           # This runs sequentially. Since it's on GitHub Actions, it has up to 6 hours to finish!
           echo "Cleaning up expired showtimes..."
-          curl -s http://localhost:3000/api/scrape/cleanup
+          curl -s -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" http://localhost:3000/api/scrape/cleanup
 
           echo "Starting QFX Scraper..."
-          curl -s http://localhost:3000/api/scrape/qfx
+          curl -s -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" http://localhost:3000/api/scrape/qfx
 
           echo "Starting BigMovies Scraper..."
-          curl -s http://localhost:3000/api/scrape/bigmovies
+          curl -s -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" http://localhost:3000/api/scrape/bigmovies
 
           echo "Starting Ranjana Scraper..."
-          curl -s http://localhost:3000/api/scrape/ranjana
+          curl -s -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" http://localhost:3000/api/scrape/ranjana
 
           echo "Starting Infinity Scraper..."
-          curl -s http://localhost:3000/api/scrape/infinity
+          curl -s -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" http://localhost:3000/api/scrape/infinity
 
           echo "Starting CK Scraper..."
-          curl -s http://localhost:3000/api/scrape/ck
+          curl -s -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" http://localhost:3000/api/scrape/ck
 
           echo "Starting One Scraper..."
-          curl -s http://localhost:3000/api/scrape/one
+          curl -s -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" http://localhost:3000/api/scrape/one
 
           echo "Starting Ini Scraper..."
-          curl -s http://localhost:3000/api/scrape/ini
+          curl -s -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" http://localhost:3000/api/scrape/ini
 
           echo "Starting Fcube Scraper..."
-          curl -s http://localhost:3000/api/scrape/fcube
+          curl -s -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" http://localhost:3000/api/scrape/fcube
 
           echo "All scraping tasks have completed successfully!"

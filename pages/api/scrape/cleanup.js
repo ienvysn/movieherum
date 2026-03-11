@@ -4,6 +4,10 @@ import { fetchTMDBDetails } from "../../../lib/tmdb";
 export const dynamic = "force-dynamic";
 
 export default async function handler(req, res) {
+  const authHeader = req.headers.authorization;
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    return res.status(401).json({ success: false, message: 'Unauthorized' });
+  }
   try {
     console.log("🧹 Starting Maintenance: Cleanup & TMDB Sync at", new Date().toISOString());
 
