@@ -1,16 +1,38 @@
-import Link from 'next/link';
-import { ArrowUpRight, Clock } from 'lucide-react';
-import { useState } from 'react';
+import Link from "next/link";
+import { ArrowUpRight, Clock } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
 
-export default function MovieCard({ id, title, poster_url, genre, cinemaCount, minPrice, duration }) {
+export default function MovieCard({
+  id,
+  title,
+  poster_url,
+  genre,
+  cinemaCount,
+  minPrice,
+  duration,
+}) {
   const [imageLoaded, setImageLoaded] = useState(false);
+  const imgRef = useRef(null);
 
-  const displayGenre = genre ? genre.split(',')[0].trim() : 'Movie';
+  useEffect(() => {
+    if (imgRef.current?.complete) {
+      setImageLoaded(true);
+    }
+  }, []);
 
+  const displayGenres = genre
+    ? genre.split(",").slice(0, 2).map(g => g.trim()).join(", ")
+    : "Movie";
 
-  const displayDuration = duration || "Runtime N/A";
+  const toTitleCase = (str) => {
+    return str.toLowerCase().split(' ').map(word => {
+      return word.charAt(0).toUpperCase() + word.slice(1);
+    }).join(' ');
+  };
 
+  const displayTitle = title ? toTitleCase(title) : "Untitled";
 
+  const displayDuration = duration || " N/A";
 
   return (
     <Link href={`/movie/${id}`} className="movie-card group">
@@ -18,13 +40,13 @@ export default function MovieCard({ id, title, poster_url, genre, cinemaCount, m
         {!imageLoaded && <div className="image-skeleton" />}
 
         <img
-          src={poster_url || '/placeholder-poster.jpg'}
+          ref={imgRef}
+          src={poster_url || "/placeholder-poster.jpg"}
           alt={`${title} Poster`}
-          className={`card-image ${imageLoaded ? 'loaded' : ''}`}
+          className={`card-image ${imageLoaded ? "loaded" : ""}`}
           onLoad={() => setImageLoaded(true)}
           loading="lazy"
         />
-
 
         <div className="card-gradient"></div>
 
@@ -34,7 +56,9 @@ export default function MovieCard({ id, title, poster_url, genre, cinemaCount, m
       </div>
 
       <div className="card-content">
-        <h3 className="card-title line-clamp-1" title={title}>{title}</h3>
+        <h3 className="card-title line-clamp-1" title={displayTitle}>
+          {displayTitle}
+        </h3>
 
         <div className="card-meta flex items-center gap-3 text-muted text-small mt-2">
           <span className="flex items-center gap-1">
@@ -42,10 +66,8 @@ export default function MovieCard({ id, title, poster_url, genre, cinemaCount, m
             {displayDuration}
           </span>
           <span className="meta-dot">•</span>
-          <span className="card-genre">{displayGenre}</span>
+          <span className="card-genre">{displayGenres}</span>
         </div>
-
-
       </div>
 
       <style jsx>{`
@@ -77,14 +99,23 @@ export default function MovieCard({ id, title, poster_url, genre, cinemaCount, m
         .image-skeleton {
           position: absolute;
           inset: 0;
-          background: linear-gradient(90deg, var(--color-neutral-200) 25%, var(--color-neutral-300) 50%, var(--color-neutral-200) 75%);
+          background: linear-gradient(
+            90deg,
+            var(--color-neutral-200) 25%,
+            var(--color-neutral-300) 50%,
+            var(--color-neutral-200) 75%
+          );
           background-size: 200% 100%;
           animation: loading 1.5s infinite;
         }
 
         @keyframes loading {
-          0% { background-position: 200% 0; }
-          100% { background-position: -200% 0; }
+          0% {
+            background-position: 200% 0;
+          }
+          100% {
+            background-position: -200% 0;
+          }
         }
 
         .card-image {
@@ -105,9 +136,16 @@ export default function MovieCard({ id, title, poster_url, genre, cinemaCount, m
           left: 0;
           right: 0;
           height: 50%;
-          background: linear-gradient(to top, rgba(10, 10, 11, 0.95) 0%, rgba(10, 10, 11, 0.4) 60%, transparent 100%);
+          background: linear-gradient(
+            to top,
+            rgba(10, 10, 11, 0.95) 0%,
+            rgba(10, 10, 11, 0.4) 60%,
+            transparent 100%
+          );
           z-index: 10;
-          transition: height 0.3s ease, background 0.3s ease;
+          transition:
+            height 0.3s ease,
+            background 0.3s ease;
         }
 
         .hover-arrow {

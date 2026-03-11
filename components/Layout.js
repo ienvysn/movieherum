@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import { Film } from 'lucide-react';
 
 export default function Layout({ children }) {
   return (
@@ -7,8 +6,7 @@ export default function Layout({ children }) {
       <header className="site-header">
         <div className="container flex items-center justify-between site-header-inner">
           <Link href="/" className="logo-link flex items-center gap-2">
-            <Film size={24} className="logo-icon" />
-            <span className="logo-text">Cinemax</span>
+            <span className="logo-text">Movie Herum</span>
           </Link>
           <nav className="site-nav">
             <Link href="/" className="nav-link">Movies</Link>
@@ -23,10 +21,9 @@ export default function Layout({ children }) {
       <footer className="site-footer">
         <div className="container flex items-center justify-center flex-col gap-4">
           <Link href="/" className="logo-link flex items-center gap-2">
-            <Film size={20} className="logo-icon text-muted" />
-            <span className="logo-text text-muted">Cinemax</span>
+            <span className="logo-text text-muted">Movie Herum</span>
           </Link>
-          <p className="text-small text-muted">&copy; {new Date().getFullYear()} Cinemax. All rights reserved.</p>
+          <p className="text-small text-muted">&copy; {new Date().getFullYear()} Movie Herum. All rights reserved.</p>
         </div>
       </footer>
 

@@ -160,6 +160,15 @@ export default function MovieDetail() {
     );
   }
 
+  const toTitleCase = (str) => {
+    if (!str) return "";
+    return str.toLowerCase().split(' ').map(word => {
+      return word.charAt(0).toUpperCase() + word.slice(1);
+    }).join(' ');
+  };
+
+  const displayTitle = toTitleCase(movie.title);
+
   // --- Dynamic Data from TMDB ---
   const duration = movie.duration || "Runtime N/A";
   const releaseDate = movie.release_date || "Release Date N/A";
@@ -175,7 +184,7 @@ export default function MovieDetail() {
   return (
     <div className="movie-detail-page">
       <Head>
-        <title>{movie.title} - Find Movie Showtimes</title>
+        <title>{displayTitle} - Find Movie Showtimes</title>
       </Head>
 
       <section className="hero-banner">
@@ -195,13 +204,13 @@ export default function MovieDetail() {
             <div className="poster-container">
               <img
                 src={movie.poster_url || '/placeholder-poster.jpg'}
-                alt={movie.title}
+                alt={displayTitle}
                 className="detail-poster"
               />
             </div>
 
             <div className="detail-info">
-              <h1 className="detail-title">{movie.title}</h1>
+              <h1 className="detail-title">{displayTitle}</h1>
 
               <div className="detail-meta flex flex-wrap items-center gap-4 mt-2 mb-4 text-small font-medium text-neutral-500">
                 <span className="flex items-center gap-1 text-accent-500">
@@ -287,7 +296,7 @@ export default function MovieDetail() {
                                     key={st.id}
                                     showtime={st}
                                     index={idx}
-                                    movieTitle={movie.title}
+                                    movieTitle={displayTitle}
                                   />
                                 );
                               })}

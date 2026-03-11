@@ -4,68 +4,69 @@ import MovieCard from '../components/MovieCard';
 import { Search } from 'lucide-react';
 import { format, addDays, startOfDay } from 'date-fns';
 
-export default function Home() {
-  const [initialMovies, setInitialMovies] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
 
-  useEffect(() => {
-    async function fetchMovies() {
-      const { data: movies, error } = await supabase
-        .from('movies')
-        .select('*')
-        .order('created_at', { ascending: false });
+export async function getStaticProps() {
+  // Fetch data on the server during build and in the background
+  const { data: movies, error } = await supabase
+    .from('movies')
+    .select('*')
+    .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching movies:', error);
-        setLoading(false);
-        return;
-      }
+  if (error) {
+    console.error('Error fetching movies:', error);
+    return { props: { initialMovies: [] }, revalidate: 60 };
+  }
 
-      const today = new Date().toISOString().split('T')[0];
-      const { data: showtimes } = await supabase
-        .from('showtimes')
-        .select('movie_id, cinema_id, price, start_time')
-        .gte('start_time', today);
+  const today = new Date().toISOString().split('T')[0];
+  const { data: showtimes } = await supabase
+    .from('showtimes')
+    .select('movie_id, cinema_id, price, start_time')
+    .gte('start_time', today);
 
-      const enrichedMovies = movies.map(movie => {
-        let cinemaCount = 0;
-        let minPrice = null;
-        let availableDates = [];
+  const enrichedMovies = movies.map(movie => {
+    let cinemaCount = 0;
+    let minPrice = null;
+    let availableDates = [];
 
-        if (showtimes) {
-          const movieShowtimes = showtimes.filter(st => st.movie_id === movie.id);
+    if (showtimes) {
+      const movieShowtimes = showtimes.filter(st => st.movie_id === movie.id);
 
-          if (movieShowtimes.length > 0) {
-            const uniqueCinemas = new Set(movieShowtimes.map(st => st.cinema_id));
-            cinemaCount = uniqueCinemas.size;
+      if (movieShowtimes.length > 0) {
+        const uniqueCinemas = new Set(movieShowtimes.map(st => st.cinema_id));
+        cinemaCount = uniqueCinemas.size;
 
-            const prices = movieShowtimes.filter(st => st.price !== null).map(st => st.price);
-            if (prices.length > 0) {
-              minPrice = Math.min(...prices);
-            }
-
-            const dateSet = new Set(movieShowtimes.map(st => st.start_time.split('T')[0]));
-            availableDates = Array.from(dateSet);
-          }
+        const prices = movieShowtimes.filter(st => st.price !== null).map(st => st.price);
+        if (prices.length > 0) {
+          minPrice = Math.min(...prices);
         }
 
-        return {
-          ...movie,
-          cinemaCount,
-          minPrice,
-          availableDates
-        };
-      });
-
-      setInitialMovies(enrichedMovies);
-      setLoading(false);
+        const dateSet = new Set(movieShowtimes.map(st => st.start_time.split('T')[0]));
+        availableDates = Array.from(dateSet);
+      }
     }
 
-    fetchMovies();
-  }, []);
+    return {
+      ...movie,
+      cinemaCount,
+      minPrice,
+      availableDates
+    };
+  });
 
-  // Date filtering logic
+  return {
+    props: {
+      initialMovies: enrichedMovies,
+    },
+    // Next.js will attempt to re-generate the page:
+    // - When a request comes in
+    // - At most once every 60 seconds
+    revalidate: 60,
+  };
+}
+
+export default function Home({ initialMovies }) {
+  const [loading, setLoading] = useState(false); // No longer loading on the client
+  const [searchQuery, setSearchQuery] = useState('');
   const filterDates = useMemo(() => {
     const today = startOfDay(new Date());
     return [0, 1, 2, 3].map(offset => addDays(today, offset));
