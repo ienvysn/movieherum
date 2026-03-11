@@ -1,0 +1,114 @@
+.hero-section {
+  padding: var(--sp-6) 0;
+  border-bottom: 1px solid var(--color-neutral-400);
+}
+
+.hero-title {
+  font-weight: 700;
+  color: var(--color-neutral-1000);
+  margin-bottom: var(--sp-2);
+}
+
+.hero-subtitle {
+  font-size: 1.125rem;
+}
+
+.filters-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  max-width: 600px;
+}
+
+.search-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-icon {
+  position: absolute;
+  left: var(--sp-4);
+  pointer-events: none;
+}
+
+.search-input {
+  width: 100%;
+  padding: var(--sp-3) var(--sp-4) var(--sp-3) var(--sp-12);
+  background-color: var(--color-neutral-200);
+  border: 1px solid var(--color-neutral-400);
+  border-radius: var(--radius-lg);
+  color: var(--color-neutral-900);
+  font-family: inherit;
+  font-size: 1rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--color-neutral-600);
+  box-shadow: 0 0 0 2px rgba(161, 161, 170, 0.2); /* Neutral glow */
+}
+
+.search-input::placeholder {
+  color: var(--color-neutral-600);
+}
+
+.date-filters {
+  display: flex;
+  scrollbar-width: none;
+}
+
+.date-filters::-webkit-scrollbar {
+  display: none;
+}
+
+.date-chip {
+  padding: var(--sp-2) var(--sp-4);
+  font-weight: 600;
+}
+
+.movie-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--sp-4);
+}
+
+.empty-state {
+  padding: var(--sp-16) 0;
+  text-align: center;
+  background-color: var(--color-neutral-200);
+  border-radius: var(--radius-lg);
+  border: 1px dashed var(--color-neutral-500);
+}
+
+@media (min-width: 640px) {
+  .movie-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--sp-6);
+  }
+}
+
+@media (min-width: 1024px) {
+  .movie-grid {
+    grid-template-columns: repeat(5, 1fr);
+    gap: var(--sp-6);
+  }
+}
+
+.skeleton-card {
+  width: 100%;
+  border-radius: var(--radius-lg);
+  background-color: var(--color-neutral-300);
+  aspect-ratio: 2/3;
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: .5;
+  }
+}

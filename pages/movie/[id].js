@@ -1,51 +1,60 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { format, parseISO, isSameDay, addDays, startOfDay } from 'date-fns';
 import { ArrowLeft, MapPin, Clock, Calendar, Users, ChevronDown, ChevronUp, Star } from 'lucide-react';
 import Link from 'next/link';
 import Head from 'next/head';
+import { useRouter } from 'next/router';
 import ShowtimeCard from '../../components/ShowtimeCard';
 
-export async function getServerSideProps({ params }) {
-  const { id } = params;
+export default function MovieDetail() {
+  const router = useRouter();
+  const { id } = router.query;
 
-  // Fetch Movie
-  const { data: movie, error: movieError } = await supabase
-    .from('movies')
-    .select('*')
-    .eq('id', id)
-    .single();
+  const [movie, setMovie] = useState(null);
+  const [showtimes, setShowtimes] = useState([]);
+  const [cinemas, setCinemas] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  if (movieError || !movie) {
-    return { notFound: true };
-  }
+  useEffect(() => {
+    if (!id) return;
 
-  // Fetch Showtimes
-  const { data: showtimes, error: showtimeError } = await supabase
-    .from('showtimes')
-    .select('*')
-    .eq('movie_id', id);
+    async function fetchData() {
+      // Fetch Movie
+      const { data: movieData, error: movieError } = await supabase
+        .from('movies')
+        .select('*')
+        .eq('id', id)
+        .single();
 
-  let cinemas = [];
-  if (showtimes && showtimes.length > 0) {
-    const cinemaIds = [...new Set(showtimes.map(s => s.cinema_id))];
-    const { data: cinemaData } = await supabase
-      .from('cinemas')
-      .select('*')
-      .in('id', cinemaIds);
-    cinemas = cinemaData || [];
-  }
+      if (movieError || !movieData) {
+        router.push('/404');
+        return;
+      }
+      setMovie(movieData);
 
-  return {
-    props: {
-      movie,
-      showtimes: showtimes || [],
-      cinemas,
-    },
-  };
-}
+      // Fetch Showtimes
+      const { data: showtimesData } = await supabase
+        .from('showtimes')
+        .select('*')
+        .eq('movie_id', id);
 
-export default function MovieDetail({ movie, showtimes, cinemas }) {
+      let cinemasData = [];
+      if (showtimesData && showtimesData.length > 0) {
+        const cinemaIds = [...new Set(showtimesData.map(s => s.cinema_id))];
+        const { data: cinemaFetchedData } = await supabase
+          .from('cinemas')
+          .select('*')
+          .in('id', cinemaIds);
+        cinemasData = cinemaFetchedData || [];
+      }
+
+      setShowtimes(showtimesData || []);
+      setCinemas(cinemasData);
+      setLoading(false);
+    }
+    fetchData();
+  }, [id, router]);
   // Generate the next 4 days for filtering
   const filterDates = useMemo(() => {
     const today = startOfDay(new Date());
@@ -111,6 +120,46 @@ export default function MovieDetail({ movie, showtimes, cinemas }) {
     setExpandedChains(prev => ({ ...prev, [chainName]: !prev[chainName] }));
   };
 
+  if (loading) {
+    return (
+      <div className="movie-detail-page skeleton-page">
+        <section className="hero-banner skeleton-hero">
+          <div className="container relative z-10 hero-content-wrapper p-8">
+            <Link href="/" className="back-link flex items-center gap-2 text-small mb-6">
+              <ArrowLeft size={16} />
+              Back to movies
+            </Link>
+            <div className="hero-content gap-8">
+              <div className="poster-container skeleton-poster pulse-anim"></div>
+              <div className="detail-info">
+                <div className="skeleton-line pulse-anim" style={{ width: '60%', height: '40px', marginBottom: '20px' }}></div>
+                <div className="skeleton-line pulse-anim" style={{ width: '40%', height: '20px', marginBottom: '20px' }}></div>
+                <div className="skeleton-line pulse-anim" style={{ width: '80%', height: '15px', marginBottom: '10px' }}></div>
+                <div className="skeleton-line pulse-anim" style={{ width: '80%', height: '15px', marginBottom: '10px' }}></div>
+                <div className="skeleton-line pulse-anim" style={{ width: '70%', height: '15px', marginBottom: '20px' }}></div>
+              </div>
+            </div>
+          </div>
+        </section>
+        <style jsx>{`
+          .skeleton-page { min-height: 100vh; background: var(--color-neutral-100); }
+          .skeleton-hero { height: 60vh; min-height: 480px; background: var(--color-neutral-200); position: relative; }
+          .skeleton-poster { width: 300px; height: 450px; background: var(--color-neutral-300); border-radius: var(--radius-lg); box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
+          .skeleton-line { background: var(--color-neutral-300); border-radius: var(--radius-sm); }
+          .pulse-anim { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+          @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+          .hero-content { display: flex; align-items: center; max-width: 1000px; margin: auto; }
+          .detail-info { flex: 1; }
+          @media (max-width: 768px) {
+            .hero-content { flex-direction: column; text-align: center; }
+            .skeleton-poster { width: 220px; height: 330px; }
+            .skeleton-line { margin-left: auto; margin-right: auto; }
+          }
+        `}</style>
+      </div>
+    );
+  }
+
   // --- Dynamic Data from TMDB ---
   const duration = movie.duration || "Runtime N/A";
   const releaseDate = movie.release_date || "Release Date N/A";
@@ -126,10 +175,9 @@ export default function MovieDetail({ movie, showtimes, cinemas }) {
   return (
     <div className="movie-detail-page">
       <Head>
-        <title>{movie.title} - Cinemax Showtimes</title>
+        <title>{movie.title} - Find Movie Showtimes</title>
       </Head>
 
-      {/* Hero Section with Blur Background aligned with Image 3 */}
       <section className="hero-banner">
         <div
           className="hero-blur-bg"
@@ -260,208 +308,6 @@ export default function MovieDetail({ movie, showtimes, cinemas }) {
         </div>
       </section>
 
-      <style jsx>{`
-        /* Hero Section */
-        .hero-banner {
-          position: relative;
-          min-height: 480px;
-          display: flex;
-          align-items: flex-end;
-          padding-top: var(--sp-20);
-          padding-bottom: var(--sp-12);
-          overflow: hidden;
-          background-color: var(--color-neutral-0);
-          margin-top: -32px; /* Pull up under header if needed */
-        }
-
-        .hero-blur-bg {
-          position: absolute;
-          inset: -20px;
-          background-size: cover;
-          background-position: top center;
-          filter: blur(20px) brightness(0.5);
-          transform: scale(1.1);
-          z-index: 1;
-        }
-
-        .hero-gradient-overlay {
-          position: absolute;
-          inset: 0;
-          background: linear-gradient(to top, var(--color-neutral-100) 0%, rgba(10,10,11,0.8) 50%, rgba(10,10,11,0.4) 100%);
-          z-index: 2;
-        }
-
-        .hero-content-wrapper {
-          position: relative;
-          z-index: 10;
-          padding-top: var(--sp-12);
-        }
-
-        .back-link {
-          display: inline-flex;
-          color: var(--color-neutral-600);
-          transition: color 0.2s;
-        }
-
-        .back-link:hover {
-          color: var(--color-neutral-900);
-        }
-
-        .hero-content {
-          display: flex;
-          align-items: center; /* Vertically center the text with the poster */
-        }
-
-        .poster-container {
-          flex-shrink: 0;
-          width: 100%;
-          max-width: 240px;
-          border-radius: var(--radius-xl);
-          overflow: hidden;
-          background-color: var(--color-neutral-200);
-          border: 1px solid rgba(255,255,255,0.05);
-          box-shadow: 0 25px 50px -12px rgba(0,0,0,0.8);
-        }
-
-        @media (max-width: 768px) {
-          .poster-container {
-            max-width: 180px;
-            margin-bottom: var(--sp-6);
-          }
-          .hero-content {
-            flex-direction: column;
-          }
-        }
-
-        .detail-poster {
-          width: 100%;
-          display: block;
-          object-fit: cover;
-          aspect-ratio: 2 / 3;
-        }
-
-        .detail-info {
-          flex: 1;
-        }
-
-        .detail-title {
-          font-size: clamp(2rem, 4vw, 3rem);
-          font-weight: 700;
-          color: var(--color-neutral-1000);
-          letter-spacing: -1px;
-        }
-
-        .meta-badge {
-          background-color: rgba(255,255,255,0.08);
-          padding: 2px 8px;
-          border-radius: var(--radius-sm);
-          font-size: 0.75rem;
-          color: var(--color-neutral-600);
-        }
-
-        .text-neutral-300 { color: #d4d4d8; }
-        .text-neutral-400 { color: #a1a1aa; border-color: #3f3f46;}
-        .text-neutral-500 { color: #71717a; }
-
-        .genre-pill {
-          background-color: rgba(255,255,255,0.05);
-          border: 1px solid rgba(255,255,255,0.1);
-          padding: var(--sp-1) var(--sp-3);
-          border-radius: var(--radius-2xl);
-          font-size: 0.75rem;
-          color: var(--color-neutral-800);
-        }
-
-        .detail-synopsis {
-          max-width: 600px;
-          line-height: 1.6;
-        }
-
-        /* Dates & Showtimes matching Image 2 */
-        .date-chips {
-          scrollbar-width: none; /* Firefox */
-        }
-        .date-chips::-webkit-scrollbar {
-          display: none; /* Safari and Chrome */
-        }
-
-        .date-chip {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          background-color: transparent;
-          border: 1px solid var(--color-neutral-500);
-          border-radius: var(--radius-lg);
-          padding: var(--sp-3) var(--sp-5);
-          min-width: 90px;
-          transition: all 0.2s;
-          color: var(--color-neutral-700);
-        }
-
-        .date-chip:hover:not(.active) {
-          background-color: var(--color-neutral-300);
-          color: var(--color-neutral-900);
-        }
-
-        .date-chip.active {
-          background-color: var(--color-neutral-900);
-          border-color: var(--color-neutral-1000);
-          color: var(--color-neutral-100);
-        }
-
-        .date-chip .day-name {
-          font-size: 0.75rem;
-          font-weight: 600;
-          text-transform: uppercase;
-          opacity: 0.7;
-          margin-bottom: 2px;
-        }
-
-        .date-chip .day-number {
-          font-size: 1rem;
-          font-weight: 700;
-        }
-
-        .chain-block {
-          background-color: transparent;
-          border-top: 1px solid var(--color-neutral-400);
-          padding-top: var(--sp-6);
-          padding-bottom: var(--sp-2);
-        }
-        .chain-block:first-child {
-          border-top: none;
-        }
-
-        .mall-block {
-          margin-bottom: var(--sp-6);
-        }
-
-        .cinema-chain-title {
-          font-size: 1.5rem;
-          color: var(--color-neutral-1000);
-          font-weight: 700;
-        }
-
-        .times-grid {
-          display: grid;
-          grid-template-columns: 1fr;
-          gap: var(--sp-4);
-        }
-
-        @media (min-width: 640px) {
-          .times-grid { grid-template-columns: repeat(2, 1fr); }
-        }
-        @media (min-width: 1024px) {
-          .times-grid { grid-template-columns: repeat(3, 1fr); gap: var(--sp-6); }
-        }
-
-        .empty-state {
-          padding: var(--sp-12) 0;
-          background-color: var(--color-neutral-200);
-          border-radius: var(--radius-lg);
-          border: 1px dashed var(--color-neutral-500);
-        }
-      `}</style>
     </div>
   );
 }

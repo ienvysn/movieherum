@@ -54,8 +54,9 @@ export default async function handler(req, res) {
         .upsert(
           {
             title: cleanTitle,
-            poster_url: movie.MovieContent[0]?.artwork || null,
-            genre: null, // QFX quick-book API doesn't cleanly provide genre in this first fetch
+            poster_url: movie.MovieContent?.[0]?.artwork || null,
+
+            synopsis: movie.MovieContent?.[0]?.mc_plot || null,
           },
           { onConflict: "title" },
         )

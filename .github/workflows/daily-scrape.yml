@@ -62,4 +62,7 @@ jobs:
           echo "Starting Ini Scraper..."
           curl -s http://localhost:3000/api/scrape/ini
 
+          echo "Starting Fcube Scraper..."
+          curl -s http://localhost:3000/api/scrape/fcube
+
           echo "All scraping tasks have completed successfully!"
