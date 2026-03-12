@@ -6,7 +6,7 @@ import { format, addDays, startOfDay } from 'date-fns';
 
 
 export async function getStaticProps() {
-  // Fetch data on the server during build and in the background
+
   const { data: movies, error } = await supabase
     .from('movies')
     .select('*')
@@ -57,9 +57,7 @@ export async function getStaticProps() {
     props: {
       initialMovies: enrichedMovies,
     },
-    // Next.js will attempt to re-generate the page:
-    // - When a request comes in
-    // - At most once every 60 seconds
+
     revalidate: 60,
   };
 }
