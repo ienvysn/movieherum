@@ -2,8 +2,7 @@ name: Daily Cinema Scraper
 
 on:
   schedule:
-
-    - cron: '15 19 * * *'
+    - cron: "15 19 * * *"
   workflow_dispatch:
 
 jobs:
@@ -16,54 +15,63 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22.11.0'
+          node-version: "24.x"
+          cache: npm
 
       - name: Install Dependencies
         run: npm ci
 
-      - name: Install Wait-On
-        run: npm install -g wait-on
-
-      - name: Start Next.js Server Locally in the Background
+      - name: Build + Start Next.js (Background)
         env:
-
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
+          set -euo pipefail
           npm run build
-          npm run start &
-          npx wait-on http-get://localhost:3000
+          nohup npm run start > server.log 2>&1 &
+          npx wait-on --timeout 120000 http-get://127.0.0.1:3000 || (echo "Next.js server failed to start (last 200 lines):" && tail -n 200 server.log && exit 1)
 
       - name: Run All Scrapers
         run: |
           # This runs sequentially. Since it's on GitHub Actions, it has up to 6 hours to finish!
+          set -euo pipefail
           echo "Cleaning up expired showtimes..."
-          curl -s -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" http://localhost:3000/api/scrape/cleanup
+          curl -fsS --retry 3 --retry-all-errors -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" http://127.0.0.1:3000/api/scrape/cleanup
 
           echo "Starting QFX Scraper..."
-          curl -s -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" http://localhost:3000/api/scrape/qfx
+          curl -fsS --retry 3 --retry-all-errors -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" http://127.0.0.1:3000/api/scrape/qfx
 
           echo "Starting BigMovies Scraper..."
-          curl -s -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" http://localhost:3000/api/scrape/bigmovies
+          curl -fsS --retry 3 --retry-all-errors -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" http://127.0.0.1:3000/api/scrape/bigmovies
 
           echo "Starting Ranjana Scraper..."
-          curl -s -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" http://localhost:3000/api/scrape/ranjana
+          curl -fsS --retry 3 --retry-all-errors -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" http://127.0.0.1:3000/api/scrape/ranjana
 
           echo "Starting Infinity Scraper..."
-          curl -s -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" http://localhost:3000/api/scrape/infinity
+          curl -fsS --retry 3 --retry-all-errors -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" http://127.0.0.1:3000/api/scrape/infinity
 
           echo "Starting CK Scraper..."
-          curl -s -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" http://localhost:3000/api/scrape/ck
+          curl -fsS --retry 3 --retry-all-errors -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" http://127.0.0.1:3000/api/scrape/ck
 
           echo "Starting One Scraper..."
-          curl -s -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" http://localhost:3000/api/scrape/one
+          curl -fsS --retry 3 --retry-all-errors -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" http://127.0.0.1:3000/api/scrape/one
 
           echo "Starting Ini Scraper..."
-          curl -s -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" http://localhost:3000/api/scrape/ini
+          curl -fsS --retry 3 --retry-all-errors -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" http://127.0.0.1:3000/api/scrape/ini
 
           echo "Starting Fcube Scraper..."
-          curl -s -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" http://localhost:3000/api/scrape/fcube
+          curl -fsS --retry 3 --retry-all-errors -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" http://127.0.0.1:3000/api/scrape/fcube
 
           echo "All scraping tasks have completed successfully!"
+
+      - name: Display Server Logs on Failure
+        if: failure()
+        run: |
+          echo "Next.js server logs (server.log):"
+          if [ -f server.log ]; then
+            cat server.log
+          else
+            echo "server.log not found."
+          fi
