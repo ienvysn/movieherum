@@ -262,12 +262,52 @@ async function scrapeQFX() {
 
           if (cinemaMatch) {
             const startTime = `${show.ss_start_date}T${show.ss_start_show_time}:00`;
-            await supabase.from("showtimes").upsert({
+
+            // NEW: Fetch Price from Seat Layout
+            let extractedPrice = null;
+            try {
+               extractedPrice = await page.evaluate(async ({ screenId, ssId, mdId, token }) => {
+                 const res = await fetch("https://web-api.qfxcinemas.com/api/external/seat-layout", {
+                   method: "POST",
+                   headers: {
+                       "content-type": "application/json",
+                       "authorization": token
+                   },
+                   body: JSON.stringify({
+                     screen_id: screenId,
+                     ss_id: ssId,
+                     md_id: mdId,
+                     type_seat_show: 1
+                   }),
+                 });
+                 if (!res.ok) return null;
+                 const data = await res.json();
+                 if (data.status && data.Records) {
+                   const firstSeat = data.Records.find(s => s.seat_price);
+                   return firstSeat ? firstSeat.seat_price : null;
+                 }
+                 return null;
+               }, {
+                 screenId: show.screen_id,
+                 ssId: show.ss_id,
+                 mdId: show.movie_details_id,
+                 token: authToken
+               });
+            } catch (pErr) {
+               console.error(`⚠️ Failed to fetch price for ${cleanTitle} at ${cinemaMatch.mall_name}: ${pErr.message}`);
+            }
+
+            const { error: sError } = await supabase.from("showtimes").upsert({
               movie_id: movieRecord.id,
               cinema_id: cinemaMatch.id,
               start_time: startTime,
+              price: extractedPrice,
               booking_url: `https://www.qfxcinemas.com/now-showing-booking/${movie.movie_id}/1`,
             }, { onConflict: "movie_id, cinema_id, start_time" });
+
+            if (sError) {
+              console.error(`❌ DB Error for ${cleanTitle} showtime:`, sError.message);
+            }
           }
         }
       }

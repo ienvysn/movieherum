@@ -30,7 +30,7 @@ export default function ShowtimeCard({ showtime, index, movieTitle }) {
 
       <div className="pill-right flex flex-col items-end gap-1-5 justify-center">
         <span className="price-text">
-          Rs. {showtime.price || 350}
+          {showtime.price ? `Rs. ${showtime.price}` : "Price N/A"}
         </span>
 
       </div>
