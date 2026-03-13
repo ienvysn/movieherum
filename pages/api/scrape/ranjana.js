@@ -1,5 +1,6 @@
 import { supabase } from "../../../lib/supabase";
 import { normalizeTitle } from "../../../lib/utils/normalize";
+import { fetchTMDBDetails } from "../../../lib/tmdb.js";
 
 export const dynamic = "force-dynamic";
 
@@ -62,7 +63,11 @@ export default async function handler(req, res) {
 
       if (!fetchRes.ok) {
         console.error(`❌ Failed to fetch from Ranjana API: ${fetchRes.status}`);
-        continue;
+        return res.status(200).json({
+            success: false,
+            message: `Ranjana API down (Status: ${fetchRes.status})`,
+            error: await fetchRes.text()
+        });
       }
 
       const jsonResponse = await fetchRes.json();
@@ -78,6 +83,10 @@ export default async function handler(req, res) {
 
       for (const movie of data) {
         const cleanTitle = normalizeTitle(movie.Movie);
+        console.log(`🔍 Processing Ranjana movie: ${cleanTitle}`);
+
+        // Fetch rich metadata fallback
+        const tmdbData = await fetchTMDBDetails(cleanTitle);
 
         const { data: movieRecord, error: mError } = await supabase
           .from("movies")
@@ -86,8 +95,14 @@ export default async function handler(req, res) {
               title: cleanTitle,
               poster_url: movie.MediaPath_src
                 ? `https://www.ranjanacineplex.com${movie.MediaPath_src}`
-                : null,
-              genre: movie.Genre || null,
+                : tmdbData?.poster_url || null,
+              genre: movie.Genre || tmdbData?.genre || null,
+              duration: tmdbData?.duration || null,
+              director: tmdbData?.director || null,
+              cast: tmdbData?.cast || null,
+              synopsis: tmdbData?.synopsis || null,
+              rating: tmdbData?.rating || null,
+              tmdb_id: tmdbData?.tmdb_id || null
             },
             { onConflict: "title" }
           )
@@ -196,6 +211,6 @@ export default async function handler(req, res) {
     });
   } catch (error) {
     console.error("💥 Critical Scraper Error:", error.message);
-    return res.status(500).json({ success: false, error: error.message });
+    return res.status(200).json({ success: false, error: error.message });
   }
 }

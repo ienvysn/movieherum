@@ -63,8 +63,32 @@ export async function getStaticProps() {
 }
 
 export default function Home({ initialMovies }) {
-  const [loading, setLoading] = useState(false); // No longer loading on the client
+  const [movies, setMovies] = useState(initialMovies);
+  const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Hydrate movie metadata on the client to avoid stale SSG data
+  useEffect(() => {
+    async function hydrateMovies() {
+      const { data: freshMovies, error } = await supabase
+        .from('movies')
+        .select('id, duration, genre, poster_url, synopsis, director, cast, rating');
+
+      if (!error && freshMovies) {
+        setMovies(prevMovies => {
+          return prevMovies.map(prev => {
+            const fresh = freshMovies.find(f => f.id === prev.id);
+            if (fresh) {
+              return { ...prev, ...fresh };
+            }
+            return prev;
+          });
+        });
+      }
+    }
+    hydrateMovies();
+  }, []);
+
   const filterDates = useMemo(() => {
     const today = startOfDay(new Date());
     return [0, 1, 2, 3].map(offset => addDays(today, offset));
@@ -73,7 +97,7 @@ export default function Home({ initialMovies }) {
   const [selectedDate, setSelectedDate] = useState(filterDates[0]);
 
   const filteredMovies = useMemo(() => {
-    const results = initialMovies.filter(movie => {
+    const results = movies.filter(movie => {
       const matchesSearch = movie.title.toLowerCase().includes(searchQuery.toLowerCase());
       if (!matchesSearch) return false;
 
@@ -83,7 +107,7 @@ export default function Home({ initialMovies }) {
     });
 
     return results;
-  }, [initialMovies, searchQuery, selectedDate]);
+  }, [movies, searchQuery, selectedDate]);
 
   return (
     <div className="container animate-fade-in">

@@ -41,6 +41,15 @@ export default async function handler(req, res) {
         body: JSON.stringify({}),
       },
     );
+
+    if (!listRes.ok) {
+        return res.status(200).json({
+            success: false,
+            message: `QFX API blocked or down (Status: ${listRes.status}). Cloudflare challenge might be active.`,
+            error: await listRes.text()
+        });
+    }
+
     const { movies } = await listRes.json();
 
 
@@ -186,6 +195,6 @@ export default async function handler(req, res) {
     return res.status(200).json({ success: true, message: "Sync Completed" });
   } catch (error) {
     console.error("💥 Critical Scraper Error:", error.message);
-    return res.status(500).json({ success: false, error: error.message });
+    return res.status(200).json({ success: false, error: error.message });
   }
 }

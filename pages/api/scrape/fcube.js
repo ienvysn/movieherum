@@ -75,7 +75,11 @@ export default async function handler(req, res) {
 
       if (!fetchRes.ok) {
         console.error(`❌ Failed to fetch from FCube API: ${fetchRes.status}`);
-        continue;
+        return res.status(200).json({
+            success: false,
+            message: `FCube API down (Status: ${fetchRes.status})`,
+            error: await fetchRes.text()
+        });
       }
 
       const html = await fetchRes.text();
@@ -210,6 +214,6 @@ export default async function handler(req, res) {
     });
   } catch (error) {
     console.error("💥 Critical Scraper Error:", error.message);
-    return res.status(500).json({ success: false, error: error.message });
+    return res.status(200).json({ success: false, error: error.message });
   }
 }

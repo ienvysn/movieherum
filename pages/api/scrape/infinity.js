@@ -80,7 +80,11 @@ export default async function handler(req, res) {
 
       if (!fetchRes.ok) {
         console.error(`❌ Failed to fetch from Infinity Movies API: ${fetchRes.status}`);
-        continue;
+        return res.status(200).json({
+            success: false,
+            message: `Infinity Movies API down (Status: ${fetchRes.status})`,
+            error: await fetchRes.text()
+        });
       }
 
       let movies = [];
@@ -198,6 +202,6 @@ export default async function handler(req, res) {
     });
   } catch (error) {
     console.error("💥 Critical Scraper Error:", error.message);
-    return res.status(500).json({ success: false, error: error.message });
+    return res.status(200).json({ success: false, error: error.message });
   }
 }

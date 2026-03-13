@@ -60,7 +60,11 @@ export default async function handler(req, res) {
 
         if (!fetchRes.ok) {
             console.error(`❌ Failed to fetch from Ini Cinemas API: ${fetchRes.status}`);
-            continue;
+            return res.status(200).json({
+                success: false,
+                message: `Ini Cinemas API down (Status: ${fetchRes.status})`,
+                error: await fetchRes.text()
+            });
         }
 
         const jsonResponse = await fetchRes.json();
@@ -244,6 +248,6 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error("💥 Critical Scraper Error:", error.message);
-    return res.status(500).json({ success: false, error: error.message });
+    return res.status(200).json({ success: false, error: error.message });
   }
 }

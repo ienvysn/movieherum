@@ -67,11 +67,13 @@ export default async function handler(req, res) {
       );
 
       let movies = [];
-      try {
-        movies = await listRes.json();
-      } catch (e) {
-        console.error(`❌ Failed to parse JSON for date ${targetDate}`);
-        continue;
+      if (!listRes.ok) {
+        console.error(`❌ Failed to fetch from CK Cinemas API: ${listRes.status}`);
+        return res.status(200).json({
+            success: false,
+            message: `CK Cinemas API down (Status: ${listRes.status})`,
+            error: await listRes.text()
+        });
       }
 
       if (!Array.isArray(movies) || movies.length === 0) {
@@ -192,6 +194,6 @@ export default async function handler(req, res) {
     });
   } catch (error) {
     console.error("💥 Critical Scraper Error:", error.message);
-    return res.status(500).json({ success: false, error: error.message });
+    return res.status(200).json({ success: false, error: error.message });
   }
 }
