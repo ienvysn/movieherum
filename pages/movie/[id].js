@@ -175,6 +175,7 @@ export default function MovieDetail() {
   const synopsis = movie.synopsis || "No synopsis available for this movie yet.";
   const director = movie.director || "Not Specified";
   const cast = movie.cast || "Not Specified";
+  const detailsSource = movie.details_source || "Unknown";
   // -------------------------------------
 
   const rating = movie.rating ? movie.rating.toFixed(1) : "N/A";
@@ -238,6 +239,7 @@ export default function MovieDetail() {
               <div className="detail-credits text-small text-neutral-500">
                 <p className="mb-1"><strong className="text-neutral-1000 font-semibold">Director:</strong> {director}</p>
                 <p><strong className="text-neutral-1000 font-semibold">Cast:</strong> {cast}</p>
+                <p className="mt-4 italic text-neutral-400 text-xs text-right">Data sourced from: {detailsSource}</p>
               </div>
             </div>
           </div>

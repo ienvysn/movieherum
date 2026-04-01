@@ -70,7 +70,8 @@ export default async function handler(req, res) {
               synopsis: details.synopsis,
               director: details.director,
               cast: details.cast,
-              rating: details.rating
+              rating: details.rating,
+              details_source: details.details_source || 'TMDB'
             })
             .eq("id", movie.id);
 

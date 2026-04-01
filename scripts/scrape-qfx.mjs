@@ -200,7 +200,8 @@ async function scrapeQFX() {
                 director: richDetails?.director || tmdbData.director,
                 cast: richDetails?.cast || tmdbData.cast,
                 synopsis: richDetails?.synopsis || tmdbData.synopsis,
-                rating: tmdbData.rating
+                rating: tmdbData.rating,
+                details_source: 'TMDB'
             };
         }
       }
@@ -217,6 +218,7 @@ async function scrapeQFX() {
             director: richDetails?.director || null,
             cast: richDetails?.cast || null,
             rating: richDetails?.rating || null,
+            details_source: richDetails?.details_source || 'QFX',
           },
           { onConflict: "title" }
         )

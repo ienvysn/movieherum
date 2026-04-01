@@ -68,8 +68,8 @@ export default async function handler(req, res) {
           {
             title: cleanTitle,
             poster_url: movie.MovieContent?.[0]?.artwork || null,
-
             synopsis: movie.MovieContent?.[0]?.mc_plot || null,
+            details_source: 'QFX',
           },
           { onConflict: "title" },
         )
