@@ -218,7 +218,6 @@ async function scrapeQFX() {
             director: richDetails?.director || null,
             cast: richDetails?.cast || null,
             rating: richDetails?.rating || null,
-            details_source: richDetails?.details_source || 'QFX',
           },
           { onConflict: "title" }
         )
