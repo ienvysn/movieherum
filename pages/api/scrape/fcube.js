@@ -61,9 +61,13 @@ export default async function handler(req, res) {
     for (let i = 0; i < targetDates.length; i++) {
       const isoDate = targetDates[i];
       const dateObj = dateObjs[i];
-      console.log(`\n📅 Scraping FCube for date: ${isoDate}`);
+      const yyyy = dateObj.getFullYear();
+      const mm = (dateObj.getMonth() + 1).toString().padStart(2, "0");
+      const dd = dateObj.getDate().toString().padStart(2, "0");
+      const fetchDate = `${mm}/${dd}/${yyyy}`;
+      console.log(`\n📅 Scraping FCube for date: ${isoDate} (using ${fetchDate})`);
 
-      const fetchUrl = `https://www.fcubecinemas.com/Home/GetNowShowingInfo?movieId=&date=${isoDate}&count=40`;
+      const fetchUrl = `https://www.fcubecinemas.com/Home/GetNowShowingInfo?movieId=&date=${fetchDate}&count=40`;
 
       const fetchRes = await fetch(fetchUrl, {
         method: "GET",

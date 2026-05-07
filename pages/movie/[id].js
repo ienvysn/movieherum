@@ -65,9 +65,16 @@ export default function MovieDetail() {
 
   // Group showtimes by chain, then by mall for the selected date
   const groupedByChain = useMemo(() => {
+    const now = new Date();
     const filteredShowtimes = showtimes.filter(s => {
       const stDate = parseISO(s.start_time);
-      return isSameDay(stDate, selectedDate);
+      if (!isSameDay(stDate, selectedDate)) return false;
+      
+      // If the selected date is today, filter out past showtimes
+      if (isSameDay(selectedDate, now) && stDate < now) {
+        return false;
+      }
+      return true;
     });
 
     const chains = {};

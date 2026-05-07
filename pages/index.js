@@ -74,14 +74,42 @@ export default function Home({ initialMovies }) {
         .from('movies')
         .select('id, duration, genre, poster_url, synopsis, director, cast, rating');
 
+      const todayDate = new Date().toISOString().split('T')[0];
+      const { data: freshShowtimes } = await supabase
+        .from('showtimes')
+        .select('movie_id, cinema_id, price, start_time')
+        .gte('start_time', todayDate);
+
       if (!error && freshMovies) {
         setMovies(prevMovies => {
           return prevMovies.map(prev => {
             const fresh = freshMovies.find(f => f.id === prev.id);
-            if (fresh) {
-              return { ...prev, ...fresh };
+            let cinemaCount = prev.cinemaCount;
+            let minPrice = prev.minPrice;
+            let availableDates = prev.availableDates;
+
+            if (freshShowtimes) {
+              const movieShowtimes = freshShowtimes.filter(st => st.movie_id === prev.id);
+              if (movieShowtimes.length > 0) {
+                const uniqueCinemas = new Set(movieShowtimes.map(st => st.cinema_id));
+                cinemaCount = uniqueCinemas.size;
+                const prices = movieShowtimes.filter(st => st.price !== null).map(st => st.price);
+                if (prices.length > 0) minPrice = Math.min(...prices);
+
+                // Use proper date from start_time
+                const dateSet = new Set(movieShowtimes.map(st => st.start_time.split('T')[0]));
+                availableDates = Array.from(dateSet);
+              } else {
+                availableDates = [];
+                cinemaCount = 0;
+                minPrice = null;
+              }
             }
-            return prev;
+
+            if (fresh) {
+              return { ...prev, ...fresh, cinemaCount, minPrice, availableDates };
+            }
+            return { ...prev, cinemaCount, minPrice, availableDates };
           });
         });
       }
