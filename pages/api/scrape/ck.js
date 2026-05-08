@@ -75,6 +75,8 @@ export default async function handler(req, res) {
             error: await listRes.text()
         });
       }
+      
+      movies = await listRes.json();
 
       if (!Array.isArray(movies) || movies.length === 0) {
         console.log(`No movies found for ${targetDate}`);

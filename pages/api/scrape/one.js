@@ -35,7 +35,7 @@ export default async function handler(req, res) {
         screens: ""
       };
 
-      const fetchRes = await fetch("https://onecinemas.com.np/nowshowing/GetNowShowingDate", {
+      const fetchRes = await fetch("https://www.onecinemas.com/nowshowing/GetNowShowingDate", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -83,7 +83,7 @@ export default async function handler(req, res) {
           detailPayload.append('ShowDate', showDate);
           detailPayload.append('MovieID', movie.MovieID);
 
-          const showtimesRes = await fetch("https://onecinemas.com.np/moviedetail/GetMovieDetailList", {
+          const showtimesRes = await fetch("https://www.onecinemas.com/moviedetail/GetMovieDetailList", {
             method: "POST",
             headers: {
               "Content-Type": "application/x-www-form-urlencoded",
@@ -169,7 +169,7 @@ export default async function handler(req, res) {
                         cinema_id: cinemaMatch.id,
                         start_time: formattedStartTime,
                         price: ticketPrice,
-                        booking_url: `https://onecinemas.com.np/showdetail/${show.ShowID}`,
+                        booking_url: `https://www.onecinemas.com/showdetail/${show.ShowID}`,
                       },
                       { onConflict: "movie_id, cinema_id, start_time" },
                    );
