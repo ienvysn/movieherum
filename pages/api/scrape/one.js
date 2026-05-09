@@ -1,3 +1,4 @@
+import { sendAlert } from "../../../lib/utils/alert";
 import { supabase } from "../../../lib/supabase";
 import { normalizeTitle } from "../../../lib/utils/normalize";
 
@@ -46,6 +47,7 @@ export default async function handler(req, res) {
 
       if (!fetchRes.ok) {
           console.error(`❌ Failed to fetch from One Cinemas API: ${fetchRes.status}`);
+        await sendAlert(`Failed to fetch from One Cinemas API. Status: ${fetchRes.status}`);
           continue;
       }
 
@@ -193,6 +195,7 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error("💥 Critical Scraper Error:", error.message);
+    await sendAlert(`Critical error in one.js: ${error.message}`);
     return res.status(500).json({ success: false, error: error.message });
   }
 }

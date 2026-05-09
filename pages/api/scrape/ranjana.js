@@ -1,3 +1,4 @@
+import { sendAlert } from "../../../lib/utils/alert";
 import { supabase } from "../../../lib/supabase";
 import { normalizeTitle } from "../../../lib/utils/normalize";
 import { fetchTMDBDetails } from "../../../lib/tmdb.js";
@@ -63,6 +64,7 @@ export default async function handler(req, res) {
 
       if (!fetchRes.ok) {
         console.error(`❌ Failed to fetch from Ranjana API: ${fetchRes.status}`);
+        await sendAlert(`Failed to fetch from Ranjana API. Status: ${fetchRes.status}`);
         return res.status(200).json({
             success: false,
             message: `Ranjana API down (Status: ${fetchRes.status})`,
@@ -211,6 +213,7 @@ export default async function handler(req, res) {
     });
   } catch (error) {
     console.error("💥 Critical Scraper Error:", error.message);
+    await sendAlert(`Critical error in ranjana.js: ${error.message}`);
     return res.status(200).json({ success: false, error: error.message });
   }
 }

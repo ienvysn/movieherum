@@ -1,3 +1,4 @@
+import { sendAlert } from "../../../lib/utils/alert";
 import { supabase } from "../../../lib/supabase";
 import { normalizeTitle } from "../../../lib/utils/normalize";
 
@@ -69,6 +70,7 @@ export default async function handler(req, res) {
       let movies = [];
       if (!listRes.ok) {
         console.error(`❌ Failed to fetch from CK Cinemas API: ${listRes.status}`);
+        await sendAlert(`Failed to fetch from CK Cinemas API. Status: ${listRes.status}`);
         return res.status(200).json({
             success: false,
             message: `CK Cinemas API down (Status: ${listRes.status})`,
@@ -196,6 +198,7 @@ export default async function handler(req, res) {
     });
   } catch (error) {
     console.error("💥 Critical Scraper Error:", error.message);
+    await sendAlert(`Critical error in ck.js: ${error.message}`);
     return res.status(200).json({ success: false, error: error.message });
   }
 }

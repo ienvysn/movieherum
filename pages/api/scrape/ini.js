@@ -1,3 +1,4 @@
+import { sendAlert } from "../../../lib/utils/alert";
 import { supabase } from "../../../lib/supabase";
 import { normalizeTitle } from "../../../lib/utils/normalize";
 import * as cheerio from "cheerio";
@@ -60,6 +61,7 @@ export default async function handler(req, res) {
 
         if (!fetchRes.ok) {
             console.error(`❌ Failed to fetch from Ini Cinemas API: ${fetchRes.status}`);
+        await sendAlert(`Failed to fetch from Ini Cinemas API. Status: ${fetchRes.status}`);
             return res.status(200).json({
                 success: false,
                 message: `Ini Cinemas API down (Status: ${fetchRes.status})`,
@@ -248,6 +250,7 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error("💥 Critical Scraper Error:", error.message);
+    await sendAlert(`Critical error in ini.js: ${error.message}`);
     return res.status(200).json({ success: false, error: error.message });
   }
 }

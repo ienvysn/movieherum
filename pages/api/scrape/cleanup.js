@@ -1,3 +1,4 @@
+import { sendAlert } from "../../../lib/utils/alert";
 import { supabase } from "../../../lib/supabase";
 import { fetchTMDBDetails } from "../../../lib/tmdb";
 
@@ -94,6 +95,7 @@ export default async function handler(req, res) {
     });
   } catch (error) {
     console.error("💥 Critical Maintenance Error:", error.message);
+    await sendAlert(`Critical error in cleanup.js: ${error.message}`);
     return res.status(500).json({ success: false, error: error.message });
   }
 }
